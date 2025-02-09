@@ -4,6 +4,7 @@ import {
   walletActionProvider,
   cdpApiActionProvider,
   cdpWalletActionProvider,
+  erc20ActionProvider,
   erc721ActionProvider
 } from "@coinbase/agentkit";
   
@@ -37,9 +38,6 @@ function validateEnvironment(): void {
     "OPENAI_API_KEY", 
     "CDP_API_KEY_NAME", 
     "CDP_API_KEY_PRIVATE_KEY",
-    "NFT_CONTRACT_NAME",
-    "NFT_CONTRACT_SYMBOL",
-    "NFT_BASE_URI",
     "TAVILY_API_KEY"
   ];
   requiredVars.forEach(varName => {
@@ -128,6 +126,7 @@ async function initializeAgent() {
       walletProvider,
       actionProviders: [
         walletActionProvider(),
+        erc20ActionProvider(),
         erc721ActionProvider(),
         cdpApiActionProvider({
           apiKeyName: process.env.CDP_API_KEY_NAME,
@@ -245,6 +244,35 @@ async function processHeadlinesAndGenerateMemes(agentResponse: string): Promise<
   }
 }
 
+async function deployNFTForMeme(agent: any, config: any, meme: MemeGeneration): Promise<void> {
+  try {
+    const deployPrompt = `
+      Create a unique NFT symbol from the headline.
+
+      Deploy a new NFT contract with the following details and return the NFT contract address. If it already exists, return the existing NFT contract address not wallet address.
+      - Contract Name: ${meme.headline.title}
+      - Contract Symbol: <contractSymbol>
+      - Token URI: ${meme.imageUrl}
+
+      Do not mint any NFTs.
+    `;
+
+    const stream = await agent.stream({ messages: [new HumanMessage(deployPrompt)] }, config);
+    
+    console.log(`\nDeploying NFT for meme: ${meme.headline.memeHeadline}`);
+    for await (const chunk of stream) {
+      if ("agent" in chunk) {
+        console.log(chunk.agent.messages[0].content);
+      } else if ("tools" in chunk) {
+        console.log(chunk.tools.messages[0].content);
+      }
+      console.log("-------------------");
+    }
+  } catch (error) {
+    console.error("Error deploying NFT:", error);
+  }
+}
+
 /**
  * Run the agent autonomously with specified intervals
  */
@@ -255,14 +283,8 @@ async function runAutonomousMode(agent: any, config: any) {
   while (true) {
     try {
       const thought =
-        `Important: As your first action, check if an NFT contract with contract address '${process.env.NFT_CONTRACT_ADDRESS} is already deployed. 
-        If no contract is found, deploy a new NFT contract with the following parameters:
-        - Name: ${process.env.NFT_CONTRACT_NAME}
-        - Symbol: ${process.env.NFT_CONTRACT_SYMBOL}
-        - Base URI: ${process.env.NFT_BASE_URI}
-        
-        After deployment or if already deployed, proceed with the user's requests.
-        
+        `
+        Important, first tell me your wallet address and balance, and retrieve an amount form faucet'
         Search for today's news headlines that would make good memes. Focus on crypto, technology, AI, 
         sports, celebrity, and politics news that are funny or noteworthy. Avoid tragic, war, sexist, racist, sensitive topics and importantly specific individuals and names.
         Articles must be from the past 24 hours.
@@ -304,6 +326,12 @@ async function runAutonomousMode(agent: any, config: any) {
         console.log(`Image URL: ${meme.imageUrl}`);
         console.log(`Meme Headline: ${meme.headline.memeHeadline}`);
       });
+
+      // Deploy NFTs using the agent
+      console.log("Deploying NFTs for memes...");
+      for (const meme of memes) {
+        await deployNFTForMeme(agent, config, meme);
+      }
 
       // Wait for next interval
       await new Promise(resolve => setTimeout(resolve, intervalSeconds * 1000));
