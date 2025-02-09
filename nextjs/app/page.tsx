@@ -77,7 +77,7 @@ export default async function Home() {
                            transition-shadow duration-300"
               >
                 <div className="relative h-64 w-full border-b border-gray-200 dark:border-gray-700">
-
+                  {collection.title}
                   <Image
                     src={collection.imageUrl.replace(/0$/, '')}
                     alt={collection.title}

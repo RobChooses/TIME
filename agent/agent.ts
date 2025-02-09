@@ -208,7 +208,7 @@ async function generateMemeImage(headline: NewsHeadline): Promise<MemeGeneration
     `);
 
   try {
-    console.log('!!!! Preparing meme prompt with headline:', headline);
+    console.log(' ** Preparing meme prompt with headline:', headline);
     const memePrompt = await imagePrompt.format({ headline });
     const response = await tool.invoke(memePrompt);
 
@@ -254,7 +254,7 @@ async function deployNFTForMeme(agent: any, config: any, meme: MemeGeneration): 
       - Contract Symbol: <contractSymbol>
       - Token URI: ${meme.imageUrl}
 
-      After deploying the NFT, mint one NFTs to the wallet address.
+      After deploying the NFT, mint one NFTs to the agent's wallet address.
     `;
 
     const stream = await agent.stream({ messages: [new HumanMessage(deployPrompt)] }, config);
@@ -284,7 +284,8 @@ async function runAutonomousMode(agent: any, config: any) {
     try {
       const thought =
         `
-        Important, first tell me your wallet address and balance, and retrieve an amount form faucet'
+        Important, first tell me your wallet address and balance, and retrieve an amount form faucet.
+        Send 
         Search for today's news headlines that would make good memes. Focus on crypto, technology, AI, 
         sports, celebrity, and politics news that are funny or noteworthy. Avoid tragic, war, sexist, racist, terrorism, violent acts, sensitive topics and importantly specific individuals and names.
         Articles must be from the past 24 hours.
