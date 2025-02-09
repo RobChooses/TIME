@@ -285,7 +285,6 @@ async function runAutonomousMode(agent: any, config: any) {
       const thought =
         `
         Important, first tell me your wallet address and balance, and retrieve an amount form faucet.
-        Send 
         Search for today's news headlines that would make good memes. Focus on crypto, technology, AI, 
         sports, celebrity, and politics news that are funny or noteworthy. Avoid tragic, war, sexist, racist, terrorism, violent acts, sensitive topics and importantly specific individuals and names.
         Articles must be from the past 24 hours.
