@@ -30,7 +30,7 @@ export default async function Home() {
         <header className="text-center mb-12 border-b-4 border-[#2b2517] dark:border-gray-700 pb-6">
           <h1 className="font-serif text-6xl mb-2 tracking-tight text-[#2b2517] dark:text-gray-100 
                         [text-shadow:2px_2px_0px_rgba(0,0,0,0.1)]">
-            The Daily Meme
+            TIMe: Today in Memes
           </h1>
           <div className="flex justify-center items-center gap-4 text-sm font-serif">
             <time className="italic text-gray-700 dark:text-gray-300">
