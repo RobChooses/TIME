@@ -254,7 +254,7 @@ async function deployNFTForMeme(agent: any, config: any, meme: MemeGeneration): 
       - Contract Symbol: <contractSymbol>
       - Token URI: ${meme.imageUrl}
 
-      Do not mint any NFTs.
+      After deploying the NFT, mint one NFTs to the wallet address.
     `;
 
     const stream = await agent.stream({ messages: [new HumanMessage(deployPrompt)] }, config);

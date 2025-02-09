@@ -15,6 +15,8 @@ It uses the following tech stack:
 - Tavily for the news aggregation
 - NFTs are deployed on Base Sepolia testnet
 
+The autonomous agent runs in a separate NodeJS process from the NextJS app, which is responsible for the frontend and making calls to web3 services such as Alchemy.
+
 
 ## How to run
 
