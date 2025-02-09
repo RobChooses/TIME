@@ -97,7 +97,7 @@ export default async function Home() {
 
       <footer className="mt-16 pb-8 text-center border-t border-[#d3c7b5] dark:border-gray-700 pt-8">
         <p className="font-serif italic text-[#2b2517] dark:text-gray-400">
-          Published by AI Newsroom & Co. — Est. 2024
+          Published by TIMe
         </p>
       </footer>
     </div>
