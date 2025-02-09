@@ -16,6 +16,10 @@ import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as readline from "readline";
 import { TavilySearchResults } from "@langchain/community/tools/tavily_search";
+import { DallEAPIWrapper } from "@langchain/openai";
+import { PromptTemplate } from "@langchain/core/prompts";
+import path from 'path';
+import { parseJSON } from './utils';
 
 dotenv.config();
 
@@ -76,6 +80,13 @@ interface NewsHeadline {
   category: "crypto" | "technology" | "AI" | "sports" | "celebrity" | "politics";
   sourceUrl: string;
   content:string;
+  memeHeadline: string;
+}
+
+// Add these interfaces after existing interfaces
+interface MemeGeneration {
+  headline: NewsHeadline;
+  imageUrl: string;
 }
 
 /**
@@ -171,6 +182,69 @@ async function initializeAgent() {
   }
 }
 
+// Add new function to generate meme image
+async function generateMemeImage(headline: NewsHeadline): Promise<MemeGeneration | null> {
+  const tool = new DallEAPIWrapper({
+    n: 1,
+    modelName: "dall-e-3",
+    openAIApiKey: process.env.OPENAI_API_KEY, 
+    size: "1792x1024"
+  });
+
+  // Create a meme-style prompt from the headline
+  const imagePrompt = PromptTemplate.fromTemplate(`
+    Create a funny meme-style image for this headline: . 
+    Context: ${headline.content}
+    Style: Modern meme aesthetic, bold and engaging, suitable for social media, 
+    high contrast, with room for text overlay. Make it humorous but appropriate.:
+
+    ### Dall-E Prompt Template
+
+    **Title of the Blog Post**: "${headline.title}"
+
+    **Preferred Color Scheme and Art Style**: Photo realistic, modern, meme-style 
+
+    Do not add any text to the image.
+
+    `);
+
+  try {
+    console.log('!!!! Preparing meme prompt with headline:', headline);
+    const memePrompt = await imagePrompt.format({ headline });
+    const response = await tool.invoke(memePrompt);
+
+    console.log('**** response ****', response);
+
+    return {
+      headline,
+      imageUrl: response
+    };
+  } catch (error) {
+    console.error("Error generating meme image:", error);
+    console.log("Skipping this headline due to image generation failure");
+    return null;  // Return null instead of throwing
+  }
+}
+
+// Add function to process headlines and generate memes
+async function processHeadlinesAndGenerateMemes(agentResponse: string): Promise<MemeGeneration[]> {
+  try {
+    const headlines = parseJSON(agentResponse) as NewsHeadline[];
+    
+    if (!Array.isArray(headlines)) {
+      throw new Error("Invalid headlines format");
+    }
+
+    // Generate memes and filter out null results
+    const memePromises = headlines.map(headline => generateMemeImage(headline));
+    const results = await Promise.all(memePromises);
+    return results.filter((result): result is MemeGeneration => result !== null);
+  } catch (error) {
+    console.error("Error processing headlines:", error);
+    return []; // Return empty array instead of throwing
+  }
+}
+
 /**
  * Run the agent autonomously with specified intervals
  */
@@ -190,21 +264,27 @@ async function runAutonomousMode(agent: any, config: any) {
         After deployment or if already deployed, proceed with the user's requests.
         
         Search for today's news headlines that would make good memes. Focus on crypto, technology, AI, 
-        sports, celebrity, and politics news that are funny or noteworthy. Avoid tragic, war and sensitive topics. 
+        sports, celebrity, and politics news that are funny or noteworthy. Avoid tragic, war, sexist, racist, sensitive topics and importantly specific individuals and names.
         Articles must be from the past 24 hours.
 
-        Format each headline as a JSON with these properties:
-        - title: The headline text
-        - category: One of: "crypto", "technology", "AI", "sports", "celebrity", "politics"
-        - sourceUrl: The URL of the article
-        - content: A brief summary of the article
+        Only response in JSON with these properties and ensure that the values can be safely parsed later.
+
+        ALso remove any text that could fail an image generation safety guard such as a person's name or company name.
+        {"title": <The headline text>, 
+         "category": <"crypto"|"technology"|"AI"|"sports"|"celebrity"|"politics">,
+        "sourceUrl": <The URL of the article>,
+        "content": <brief summary of the article>
+        "memeHeadline": <a funny, meme-style headline that could be used for a meme image>}
 
         Return 3-5 headlines in this format.`;
 
       const stream = await agent.stream({ messages: [new HumanMessage(thought)] }, config);
+      let agentResponse = '';
 
+      // Collect the full response
       for await (const chunk of stream) {
         if ("agent" in chunk) {
+          agentResponse += chunk.agent.messages[0].content;
           console.log(chunk.agent.messages[0].content);
         } else if ("tools" in chunk) {
           console.log(chunk.tools.messages[0].content);
@@ -212,6 +292,20 @@ async function runAutonomousMode(agent: any, config: any) {
         console.log("-------------------");
       }
 
+      // Process headlines and generate memes
+      console.log("Generating memes from headlines...");
+      const memes = await processHeadlinesAndGenerateMemes(agentResponse);
+      
+      // Log generated memes
+      memes.forEach((meme, index) => {
+        console.log(`\nMeme ${index + 1}:`);
+        console.log(`Title: ${meme.headline.title}`);
+        console.log(`Category: ${meme.headline.category}`);
+        console.log(`Image URL: ${meme.imageUrl}`);
+        console.log(`Meme Headline: ${meme.headline.memeHeadline}`);
+      });
+
+      // Wait for next interval
       await new Promise(resolve => setTimeout(resolve, intervalSeconds * 1000));
     } catch (error) {
       if (error instanceof Error) {
