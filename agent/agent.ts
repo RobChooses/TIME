@@ -73,9 +73,9 @@ const WALLET_DATA_FILE = "wallet_data.txt";
 // Add this type for our filtered headlines
 interface NewsHeadline {
   title: string;
-  category: string;
-  url: string;
-  sentiment: 'positive' | 'neutral'
+  category: "crypto" | "technology" | "AI" | "sports" | "celebrity" | "politics";
+  sourceUrl: string;
+  content:string;
 }
 
 /**
@@ -189,8 +189,17 @@ async function runAutonomousMode(agent: any, config: any) {
         
         After deployment or if already deployed, proceed with the user's requests.
         
-        Searches for today's news headlines that would make good memes. Focuses on crypto, blockchain, technology, AI, 
-        sports, celebrity, and politics news that are funny or noteworthy. Avoids tragic or sensitive topics. New articles have to be from the past 24 hours.`;
+        Search for today's news headlines that would make good memes. Focus on crypto, technology, AI, 
+        sports, celebrity, and politics news that are funny or noteworthy. Avoid tragic, war and sensitive topics. 
+        Articles must be from the past 24 hours.
+
+        Format each headline as a JSON with these properties:
+        - title: The headline text
+        - category: One of: "crypto", "technology", "AI", "sports", "celebrity", "politics"
+        - sourceUrl: The URL of the article
+        - content: A brief summary of the article
+
+        Return 3-5 headlines in this format.`;
 
       const stream = await agent.stream({ messages: [new HumanMessage(thought)] }, config);
 
