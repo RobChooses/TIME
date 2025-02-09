@@ -4,7 +4,7 @@ import {
   walletActionProvider,
   cdpApiActionProvider,
   cdpWalletActionProvider,
-
+  erc721ActionProvider
 } from "@coinbase/agentkit";
   
 import { getLangChainTools } from "@coinbase/agentkit-langchain";
@@ -15,6 +15,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as readline from "readline";
+import { TavilySearchResults } from "@langchain/community/tools/tavily_search";
 
 dotenv.config();
 
@@ -28,7 +29,15 @@ function validateEnvironment(): void {
   const missingVars: string[] = [];
 
   // Check required variables
-  const requiredVars = ["OPENAI_API_KEY", "CDP_API_KEY_NAME", "CDP_API_KEY_PRIVATE_KEY"];
+  const requiredVars = [
+    "OPENAI_API_KEY", 
+    "CDP_API_KEY_NAME", 
+    "CDP_API_KEY_PRIVATE_KEY",
+    "NFT_CONTRACT_NAME",
+    "NFT_CONTRACT_SYMBOL",
+    "NFT_BASE_URI",
+    "TAVILY_API_KEY"
+  ];
   requiredVars.forEach(varName => {
     if (!process.env[varName]) {
       missingVars.push(varName);
@@ -60,6 +69,14 @@ validateEnvironment();
   
 // Configure a file to persist the agent's CDP MPC Wallet Data
 const WALLET_DATA_FILE = "wallet_data.txt";
+
+// Add this type for our filtered headlines
+interface NewsHeadline {
+  title: string;
+  category: string;
+  url: string;
+  sentiment: 'positive' | 'neutral'
+}
 
 /**
  * Initialize the agent with CDP Agentkit
@@ -100,6 +117,7 @@ async function initializeAgent() {
       walletProvider,
       actionProviders: [
         walletActionProvider(),
+        erc721ActionProvider(),
         cdpApiActionProvider({
           apiKeyName: process.env.CDP_API_KEY_NAME,
           apiKeyPrivateKey: process.env.CDP_API_KEY_PRIVATE_KEY?.replace(/\\n/g, "\n"),
@@ -111,7 +129,19 @@ async function initializeAgent() {
       ],
     });
 
+    const tavilySearch = new TavilySearchResults({
+      topic: "news",
+      maxResults: 10,
+      searchDepth: "deep",
+      includeAnswer: true,
+      includeRawContent: true,
+      includeImages: true,
+      apiKey: process.env.TAVILY_API_KEY
+    });
+
+
     const tools = await getLangChainTools(agentkit);
+    tools.push(tavilySearch);
 
     // Store buffered conversation history in memory
     const memory = new MemorySaver();
@@ -123,14 +153,15 @@ async function initializeAgent() {
       tools,
       checkpointSaver: memory,
       messageModifier: `
-        You are a helpful agent that can interact onchain using the Coinbase Developer Platform AgentKit. You are 
+        You are an agent that can interact onchain using the Coinbase Developer Platform AgentKit. You are 
         empowered to interact onchain using your tools. Be concise and helpful with your responses. Refrain from 
-        restating your tools' descriptions unless it is explicitly requested.
-        `,
+        restating your tools' descriptions unless it is explicitly requested. Do not send transactions, send NFTs or ETH
+        unless explicitly requested. Show balance and wallet address before any other action.`
     });
 
     // Save wallet data
     const exportedWallet = await walletProvider.exportWallet();
+    
     fs.writeFileSync(WALLET_DATA_FILE, JSON.stringify(exportedWallet));
 
     return { agent, config: agentConfig };
@@ -150,8 +181,16 @@ async function runAutonomousMode(agent: any, config: any) {
   while (true) {
     try {
       const thought =
-        "Be creative and do something interesting on the blockchain. " +
-        "Choose an action or set of actions and execute it that highlights your abilities.";
+        `Important: As your first action, check if an NFT contract with contract address '${process.env.NFT_CONTRACT_ADDRESS} is already deployed. 
+        If no contract is found, deploy a new NFT contract with the following parameters:
+        - Name: ${process.env.NFT_CONTRACT_NAME}
+        - Symbol: ${process.env.NFT_CONTRACT_SYMBOL}
+        - Base URI: ${process.env.NFT_BASE_URI}
+        
+        After deployment or if already deployed, proceed with the user's requests.
+        
+        Searches for today's news headlines that would make good memes. Focuses on crypto, blockchain, technology, AI, 
+        sports, celebrity, and politics news that are funny or noteworthy. Avoids tragic or sensitive topics. New articles have to be from the past 24 hours.`;
 
       const stream = await agent.stream({ messages: [new HumanMessage(thought)] }, config);
 

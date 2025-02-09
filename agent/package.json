@@ -15,11 +15,12 @@
   "dependencies": {
     "@coinbase/agentkit": "latest",
     "@coinbase/agentkit-langchain": "^0.1.0",
-    "@langchain/core": "latest",
+    "@langchain/community": "^0.3.29",
+    "@langchain/core": "^0.3.39",
     "@langchain/langgraph": "latest",
     "@langchain/openai": "latest",
-    "viem": "^2.22.23",
-    "dotenv": "^16.4.1"
+    "dotenv": "^16.4.1",
+    "viem": "^2.22.23"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
