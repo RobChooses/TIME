@@ -65,3 +65,10 @@ next-env.d.ts
 # Misc
 .DS_Store
 *.pem
+
+# Agent wallet files
+**/wallet_data.txt
+
+# Agent
+agent/node_modules
+agent/.env
