@@ -4,7 +4,7 @@ Project submission for the EthGlobal Agentic Ethereum Async Hackathon 2025
 
 ## Overview
 
-TIMe is a news aggregation site that uses an automonous AI agent to scan the web for the latest news every hour. It finds the most interesting news article that could create a funny, viral meme and passes this to dall-e 3 to generate an image. This is then deployed as a meme NFT on Base Sepolia testnet, allowing users to mint them.
+TIMe is a news aggregation site that uses an automonous AI agent (Coinbase AgentKit) to scan the web for the latest news periodically every day. Using Tavily search tool in LangChain, it finds the most interesting news article that could create a funny, viral meme and passes this to an another agent (dall-e 3) to generate an image. This is then deployed as a meme NFT on Base Sepolia testnet from the agent's own wallet using Coinbase CDP and AgentKit, allowing other users to mint them.
 
 ## Tech Stack
 
