@@ -16,10 +16,8 @@ export async function GET() {
     // Transform the data to only include required fields
     const simplifiedNFTs = data.ownedNfts.map((nft: any) => ({
       contractAddress: nft.contract.address,
-      title: "test",
-      imageUrl: "test",
-    //   title: nft.contractMetadata?.name || '',
-    //   imageUrl: nft.tokenUri?.gateway || ''
+      title: nft.contractMetadata?.name || '',
+      imageUrl: nft.tokenUri?.gateway || ''
     }));
 
     return NextResponse.json(

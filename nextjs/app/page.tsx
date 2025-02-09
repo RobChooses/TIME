@@ -3,7 +3,7 @@ import Image from "next/image";
 // Types for NFT collections
 type NFTCollection = {
   id: string;
-  name: string;
+  title: string;
   imageUrl: string;
   contractAddress: string;
   createdAt: string;
@@ -22,13 +22,14 @@ async function getNFTCollections(): Promise<NFTCollection[]> {
     
     const result = await response.json();
     
-    // Transform the API response to match NFTCollection type
+    // Transform the API response and ensure imageUrl is an absolute URL
     const collections = result.data.map((nft: any, index: number) => ({
-      id: nft.contractAddress, // Using contract address as unique ID
-      name: nft.title,
-      imageUrl: nft.imageUrl,
+      id: nft.contractAddress,
+      title: nft.title,
+      // Ensure the imageUrl is an absolute URL
+      imageUrl: new URL(nft.imageUrl, 'http://localhost:3000').toString(),
       contractAddress: nft.contractAddress,
-      createdAt: new Date().toISOString() // Using current date since API doesn't provide creation date
+      createdAt: new Date().toISOString()
     }));
     
     return collections;
@@ -49,7 +50,7 @@ export default async function Home() {
         <header className="text-center mb-12 border-b-4 border-[#2b2517] dark:border-gray-700 pb-6">
           <h1 className="font-serif text-6xl mb-2 tracking-tight text-[#2b2517] dark:text-gray-100 
                         [text-shadow:2px_2px_0px_rgba(0,0,0,0.1)]">
-            TIMe: Today in Meme
+            TIMe: Today in Memes
           </h1>
           <div className="flex flex-col items-center gap-4 text-sm font-serif">
             <div className="w-full max-w-xl flex items-center justify-center gap-4 my-4">
@@ -76,17 +77,18 @@ export default async function Home() {
                            transition-shadow duration-300"
               >
                 <div className="relative h-64 w-full border-b border-gray-200 dark:border-gray-700">
-                  {/* <Image
-                    src={collection.imageUrl}
-                    alt={collection.name}
+
+                  <Image
+                    src={collection.imageUrl.replace(/0$/, '')}
+                    alt={collection.title}
                     fill
                     className="object-cover"
                     priority={collection.id === '1'}
-                  /> */}
+                  />
                 </div>
                 <div className="p-6">
                   <h2 className="font-serif text-xl font-bold mb-3 leading-tight text-gray-900 dark:text-gray-100">
-                    {collection.name}
+                    {collection.title}
                   </h2>
                   <div className="flex justify-between items-center border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
                     <button
@@ -95,7 +97,7 @@ export default async function Home() {
                                dark:bg-gray-700 dark:hover:bg-gray-600
                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2b2517]
                                dark:focus:ring-gray-500"
-                      aria-label={`Mint NFT from ${collection.name} collection`}
+                      aria-label={`Mint NFT from ${collection.title} collection`}
                     >
                       Mint NFT
                     </button>
@@ -125,7 +127,7 @@ export default async function Home() {
 
       <footer className="mt-16 pb-8 text-center border-t border-[#d3c7b5] dark:border-gray-700 pt-8">
         <p className="font-serif italic text-[#2b2517] dark:text-gray-400">
-          TIMe: Today in Meme
+          TIMe: Today in Memes
         </p>
       </footer>
     </div>
