@@ -1,6 +1,6 @@
 # TIMe: Today in Memes
 
-Project submission for the EthGlobal Agent Hackathon 2025
+Project submission for the EthGlobal Agentic Ethereum Async Hackathon 2025
 
 ## Overview
 
