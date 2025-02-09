@@ -13,7 +13,9 @@ type NFTCollection = {
 async function getNFTCollections(): Promise<NFTCollection[]> {
   try {
     const response = await fetch('http://localhost:3000/api/nft-contracts', {
-      next: { revalidate: 3600 }
+      cache: 'no-store'  // Forces fresh data on every request
+      // Alternatively, use:
+      // next: { revalidate: 0 }  // For dynamic data
     });
     
     if (!response.ok) {

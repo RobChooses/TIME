@@ -7,7 +7,12 @@ export async function GET() {
     const baseUrl = `https://base-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}/getNFTs`;
     const owner = process.env.NEXT_PUBLIC_AGENT_WALLET_ADDRESS;
 
-    const response = await fetch(`${baseUrl}?owner=${owner}`);
+    console.log("** Going to fetch:", `${baseUrl}?owner=${owner}`);
+
+    const response = await fetch(`${baseUrl}?owner=${owner}`, {
+      cache: 'no-store',
+      next: { revalidate: 0 }
+    });
     const data = await response.json();
 
     // Transform the data to only include required fields
